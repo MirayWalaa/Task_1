@@ -15,6 +15,9 @@ const perkSchema = Joi.object({
   merchant: Joi.string().allow('')
 
 }); 
+const titleSchema = Joi.object({
+      title: Joi.string().min(2).required()
+    });
 
   
 
@@ -68,12 +71,29 @@ export async function createPerk(req, res, next) {
   }
 }
 // TODO
+
 // Update an existing perk by ID and validate only the fields that are being updated 
+// Update only the title of a perk by ID
 export async function updatePerk(req, res, next) {
-  
+  try {
+    // validate only the title
+    const { value, error } = updateTitleSchema.validate(req.body);
+    if (error) return res.status(400).json({ message: error.message });
+
+    // update only the title field
+    const doc = await Perk.findByIdAndUpdate(
+      req.params.id,
+      { $set: { title: value.title } }, // only update title
+      { new: true } // return updated document
+    );
+
+    if (!doc) return res.status(404).json({ message: "perk not found" });
+
+    res.json({ perk: doc });
+  } catch (err) {
+    next(err);
+  }
 }
-
-
 // Delete a perk by ID
 export async function deletePerk(req, res, next) {
   try {
@@ -82,3 +102,4 @@ export async function deletePerk(req, res, next) {
     res.json({ ok: true });
   } catch (err) { next(err); }
 }
+
